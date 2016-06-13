@@ -1,0 +1,466 @@
+code: //后期会加入注释
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+//收费管理
+
+//基本信息格式及结构体、
+
+typedef struct xiaoqu
+{
+	char* Name;
+	int count;
+}xiaoqu;
+
+typedef struct House
+{
+	int Num;
+	char Type[10];
+	double Area;
+}House;
+
+typedef struct ChargeManage
+{
+	char chargeName[50];
+	double charge;
+	char units[20];
+	int period;
+	
+}ChargeManage;
+
+
+struct Custm
+{
+	int Number;
+	char Name[50];
+	char Tel[20];
+	char Address[50];
+	double PreCharge;
+	double Overdue;
+	bool Baoxiu;
+	bool Complaint;
+	House house;
+	int CarNum;
+	ChargeManage CM;
+	
+	struct Custm *next;	
+}*custdata,*head,*p1,*p2;
+
+struct Overdue{
+	double Over;
+	char Name[50];
+	struct Overdue* next;
+};
+
+
+const char* PASSWORD = "KEY";
+
+void init();
+void menu();
+
+void CountType();
+//列出用户信息
+void List();
+void QueryOverdue();
+
+//显示投诉报修报表
+
+void ShowComList();
+
+void Add();
+void Delete();
+void Update(); 
+
+//查找车位
+int SearchCarbyUser(char*);
+
+//将小区的所有相关信息内容存为文件。
+void SaveFile();
+
+FILE *fp;
+
+
+
+int main(void)
+{
+	char* key;
+	//bool ;
+	FILE *fp;
+	
+	char Name[50];
+		
+		
+	int x;
+	printf("欢迎来到xxx物业管理系统！\n");
+	printf("请输入管理口令：\n");
+	scanf("%s",&key);
+	if(!strcmp(key, PASSWORD))
+	{
+		init();
+		while(1)
+		{
+			//菜单
+			menu();
+			scanf("%d",&x);
+			switch(x)
+			{
+				case 1:
+					List();
+					break;
+
+				case 2:
+					Add();
+					break;
+
+				case 3: 
+					Delete();
+					break;
+
+				case 4:
+					Update();
+					break;
+
+				case 5:
+					QueryOverdue();
+					break;
+				case 6:
+					ShowComList();
+					break;								
+
+				case 7:
+					printf("请输入所查询的用户姓名:  ");
+					scanf("%s", Name);
+					SearchCarbyUser(Name);
+					break;
+
+				case 8:
+					SaveFile();
+					break;
+
+				case 9:
+					CountType();
+					break;
+
+				case 0:
+					exit(0);
+
+
+
+				default: 
+					printf("请输入正确的命令！\n");
+			}
+		}		
+	}
+	return 0;
+}
+
+
+void init()
+{
+	int i = 0;
+	char ch;
+	//char cache[50];
+
+	//建立链表 
+		
+	
+	fp = fopen("DATA.txt", "r+");
+	if(fp == NULL){
+		printf("Can not open file!\n");
+		exit(0);
+	}else{		
+		p1=(struct Custm*)malloc(sizeof(struct Custm));
+		while(!feof(fp)){
+			if(ch = fgetc(fp)!=EOF)
+			{
+				p2 = custdata = (struct Custm*)malloc(sizeof(struct Custm));
+				if(i = 0) 
+					head = p1;				
+				
+				fseek(fp, i*sizeof(struct Custm), 0);				
+				fread(custdata, sizeof(struct Custm), 1, fp);
+				
+				p2 = custdata;
+				p2->next = NULL;
+				p1->next = p2;
+				//p1 = p2;			
+				custdata = p1;
+				
+				i++;
+			}
+		}
+		
+	}
+	
+			
+}
+
+void menu()
+{
+	printf("请输入数字选择需要进行的操作：\n");
+	printf("1:显示用户信息;  2:添加用户;\n3:删除用户;		 4:修改用户资料;\n5:显示欠费用户;      6:查找车位\n7:存档;          8:计算房型种类;\n0:退出;");
+			
+}
+
+void CountType()
+{
+	
+	//char ch;
+	int i = 0;
+	//char cache[10];
+	char *diff[100];
+	int typeNum = 0;
+	 
+	custdata = head;
+	
+	while(custdata != NULL)
+		if(strcmp(diff[i], custdata->house.Type))
+		{
+			diff[i] = custdata->house.Type;
+			custdata = custdata->next;
+			i++;
+		}
+			 
+	i = 0;
+	while(diff[i] == NULL)
+	{
+		typeNum++;
+		i++;
+	} 
+	
+	printf("********************本小区总共有%d种房型********************\n\n", typeNum);
+	for(i = 0; i < typeNum; i++)
+	{
+		printf("********************%s********************\n", diff[i]);
+	}
+	
+}
+//列出用户信息
+void List()
+{
+	custdata = head;
+	printf("全部用户：\n");
+	while(custdata != NULL)
+	{
+		printf("%s\n", custdata->Name);
+		custdata = custdata->next;
+	}
+		
+}
+
+
+void QueryOverdue()
+{
+	int i, j, times = 0;
+
+	char name[50];
+	double OD;
+	
+	double cache = 0;
+
+	custdata = head;
+	
+	struct Overdue* point1, *point2, *h;
+	point1 = (struct Overdue*)malloc(sizeof(struct Overdue));
+	h = (struct Overdue*)malloc(sizeof(struct Overdue));
+	printf("***************************欠费用户如下***************************\n\n");
+	
+
+	while(custdata != NULL)
+	{
+		point2 = (struct Overdue*)malloc(sizeof(struct Overdue));
+		strcpy(point2->Name, custdata->Name);
+	
+		point2->Over = custdata->Overdue;
+		point2->next = NULL;
+		point1->next = point2;
+		point1 = point2;
+				
+		times++;		
+		custdata = custdata->next;
+	}
+	point1 = h;
+	
+	for(i = 0; i < times; i++)
+	{
+		for(j = 0; j < times; j++)
+		{
+			if(point1->Over < point1->next->Over)
+			{
+				OD = point1->Over;
+				strcpy(name, point1->Name);
+				point1->next->Over = OD;
+				strcpy(point1->next->Name, name);
+				
+			}
+			point1 = point1->next;
+		}
+	}
+	
+	
+}
+
+
+//显示投诉报修报表
+void ShowBaoxiuList()
+{
+	printf("************************如下用户报修未解决：******************\n");
+
+	while(custdata != NULL)
+		if(custdata->Baoxiu)
+		{
+			printf("%s\n", custdata->Name);
+			custdata = custdata->next;
+		}
+}
+void ShowComList()
+{
+	printf("************************如下用户投诉：******************\n");
+	while(custdata != NULL)
+	{
+		if(custdata->Complaint)
+		{
+			printf("%s\n", custdata->Name);
+			custdata = custdata->next;
+		}
+	}
+	
+	
+}
+
+//查找车位信息 
+int SearchCarbyUser(char CustName[])
+{
+	while(custdata != NULL)
+	{
+		if(custdata->CarNum == 0)
+		printf("该住户未注册车辆！\n");
+			
+			if(strcmp(custdata->Name, CustName))
+			{
+				printf("该用户的车位号为：%s\n", custdata->CarNum);
+				return custdata->CarNum;
+			}
+		custdata = custdata->next;
+	}
+	
+	printf("用户不存在！\n");
+	
+}
+
+
+void Add()//录入业主信息//
+ { 
+	struct Custm *p;
+	p=(struct Custm *)malloc(sizeof(struct Custm));
+	printf("请录入业主信息："); 
+	printf("ID:");
+	scanf("%s",p->Number);
+	printf("姓名:");
+	scanf("%s",p->Name);
+	printf("电话："); 
+	scanf("%s",p->Tel);
+	printf("地址：");
+	scanf("%s",p->Address);
+	printf("预付金额："); 
+	scanf("%lf",p->PreCharge);
+	printf("欠费金额:");
+	scanf("%lf",p->Overdue);
+	printf("报修:");
+	scanf("%d",p->Baoxiu); 
+	printf("投诉：");
+	scanf("%d",p->Complaint);
+	printf("房型资料：\n");
+	printf("房型编号：");
+	scanf("%d", p->house.Num);
+	printf("房型：");
+	scanf("%s", p->house.Type);
+	printf("建筑物面积："); 
+	scanf("%lf", p->house.Area); 
+	
+	p->next = NULL;
+	p2->next = p;
+	p2 = p;
+	 
+	printf("录入成功!\n");
+ }
+
+void Update()
+{
+	struct Custm *p;
+	char Name[50];
+	
+	printf("请输入需要修改的用户\n");
+	scanf("%s",Name);
+	while(custdata != NULL)
+	{
+		if(!strcmp(Name, custdata->Name))
+		{
+			printf("请输入新的户主信息："); 
+			printf("ID:");
+			scanf("%s",custdata->Number);
+			printf("姓名:");
+			scanf("%s",custdata->Name);
+			printf("电话："); 
+			scanf("%s",custdata->Tel);
+			printf("地址：");
+			scanf("%s",custdata->Address);
+			printf("预付金额："); 
+			scanf("%lf",custdata->PreCharge);
+			printf("欠费金额:");
+			scanf("%lf",custdata->Overdue);
+			printf("报修:");
+			scanf("%d",custdata->Baoxiu); 
+			printf("投诉：");
+			scanf("%d",custdata->Complaint);
+			printf("房型资料：\n");
+			printf("房型编号：");
+			scanf("%d", custdata->house.Num);
+			printf("房型：");
+			scanf("%s", custdata->house.Type);
+			printf("建筑物面积："); 
+			scanf("%lf", p->house.Area);
+			
+			printf("修改成功！\n");
+		}
+	}
+	
+	 
+}
+
+void Delete()
+{
+	char Name[50];
+	p1 = head;
+	p2 = p1->next;
+	
+	printf("请输入需要删除的用户\n");
+	scanf("%s",Name);
+	while(custdata != NULL)
+	{
+		if(strcmp(Name, head->Name))
+		{
+			head = head->next;
+			break;
+		}
+		
+		if(!strcmp(Name, p2->Name)) 
+		{
+			p1->next = p2->next;
+			//p2 = NULL;
+		}
+		p1 = p1->next;
+	}
+	printf("用户已删除...\n");
+}
+//将链表内容存到文件中 
+void SaveFile()
+{
+	while(custdata != NULL)
+	{
+		fwrite(custdata, sizeof(struct Custm), 1, fp);
+	}
+	printf("更改已保存....\n");
+	
+}
