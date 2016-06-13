@@ -1,0 +1,130 @@
+code
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
+using namespace std;
+struct Pos//定义一个结构体
+{
+	int P1;  //第一个单词的位置
+	int P2;  //第二个单词的位置
+	int State;//代表两个词是否能进行拼词，state为1的话就是能，为0的话代表两个单词不满足拼词条件
+};
+
+int  k,a, b, c, d, m, n;//定义程序需要的一系类变量
+char Word[4][15];//存储输入的四个单词
+char Map[15][25];//用来进行输出操作
+int Len[4],PLen[5];//len数组用来存储每个单词长度
+Pos arr[2] = {{0,0,0},{0,0,0}};
+
+bool judge();//判断两组单词是否都能拼词
+Pos Find(char *, char *);//计算单词中交叉字母在两单词中的位置 
+void cal();//为填充到map做准备 
+void output();//输出结果
+
+int main(void)
+{
+	//at part right but
+
+	freopen("output.txt", "w", stdout);
+	while (~scanf("%s", Word[0]))//输入操作 
+	{
+		if (Word[0][0]=='#')//一旦输入#号，代表输入结束
+			break;
+		else if (~scanf("%s%s%s", Word[1], Word[2], Word[3]))//如果第一个不是#号，则继续输入其他三个单词
+		 {
+			if ( judge() )//判断两组单词是否都能拼词
+			{
+				printf("Unable to make two crosses\n");
+				continue;
+			}  
+			cal();//为填充到map做准备 
+			output();//输出结果
+		}	
+	}
+
+	return 0;
+}
+
+
+bool judge()
+{
+	if ( ((arr[0] = Find(Word[0], Word[1])).State==0 || (arr[1] = Find(Word[2], Word[3])).State)==0 )
+		return true;
+	return false; 
+}
+/* 函数功能
+ * 计算单词中交叉字母在两单词中的位置 
+ * 一下代码是这样工作的  比如at part
+ * 我先取at中第一个字母，在part中找是否有a,如果能找到，state就赋值为1，同时结束循环。
+ * 假如第一个单词中的所有字母在第二格单词中都找不到，那么state就是0 
+ */ 
+Pos Find(char *s1, char *s2)
+{
+	Pos tmp = {0, 0, 0};//p1=0. p2=0, state=0
+	for (tmp.P1=0; *s1; s1++,tmp.P1++) //循环遍历第一个单词的字母
+	{
+		s2 -= tmp.P2;//s2必须复位，才能循环遍历第二个单词
+		for (tmp.P2=0; *s2; s2++, tmp.P2++)//循环遍历第二个单词的字母，看是否有和第一个单词中的字母相同的
+			if (*s1 == *s2) //判断字符是否相同
+			{
+				tmp.State = 1;//相同代表能拼词
+				break;//只要能，就不需要继续循环了
+			}
+		if (tmp.State)//只要能，就不需要继续循环了
+			break;
+	}
+	return tmp;
+}
+
+
+
+/*函数功能
+ * 为填充到map做准备 
+ **/
+void cal()
+{
+	/* 计算单词长度 */
+	for (int i=0; i<4; i++)
+	{
+		Len[i] = strlen(Word[i]);
+		PLen[i] = i;
+	}
+	/* 计算单词长度 */
+	
+	memset(Map, ' ', sizeof(Map));/* Map置为空格 */
+
+	/* 计算相关坐标 */
+	m = max(arr[0].P2 ,arr[1].P2 );// Top of the arr
+	n = m;
+	a = arr[0].P1;
+	b = m-arr[0].P2;
+	c = Len[0]+3+arr[1].P1;
+	d = m-arr[1].P2;
+	/* 计算相关坐标 */
+}
+
+
+void output()
+{	 
+	 /* 将单词填充到Map中 */
+	for (int i=0; i<Len[0]; i++)
+		Map[n][i] = Word[0][i];
+	for (int i=b; i-b<Len[1]; i++)
+		Map[i][a] = Word[1][i-b];
+	for (int i=0; i<Len[2]; i++)
+		Map[n][Len[0]+3+i] = Word[2][i];
+	for (int i=d; i-d<Len[3]; i++)
+		Map[i][c] = Word[3][i-d];
+	/* 将单词填充到Map中 */
+
+	/* 输出Map */
+		k = Len[1]-arr[0].P2>Len[3]-arr[1].P2 ? Len[1]-arr[0].P2 : Len[3]-arr[1].P2;
+		for (int i=0; i<m+k; i++)
+		{
+			for (int j=0; j<Len[0]+Len[2]+3; j++)
+				putchar(Map[i][j]);
+			putchar('\n');
+		}
+	/* 输出Map */		
+}
